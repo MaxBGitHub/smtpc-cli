@@ -5,12 +5,10 @@
 #include <string.h>
 
 /*
- * Thread-local storage portability shim.
- *
- * _Thread_local (C11) requires MSVC to be invoked with /std:c11 or
- * /std:c17 (VS 2019 16.8+). Rather than depend on that build flag being
- * set correctly on the Windows side, fall back to the compiler-specific
- * spelling so this compiles under any MSVC C mode.
+** Thread-local storage portability shim.
+**
+** _Thread_local (C11) requires MSVC to be invoked with /std:c11 or
+** /std:c17 (VS 2019 16.8+).
 */
 #if defined(_MSC_VER)
     #define SMTP_THREAD_LOCAL __declspec(thread)
@@ -66,10 +64,10 @@ static          int   g_smtp_addr_char_class_ready = 0;
 
 
 /*
- * One-time table build. Deterministic and idempotent, so a benign race
- * across threads on first use is fine - every thread computes the same
- * bytes; no lock needed.
- */
+** One time table build. Deterministic and idempotent, so a benign race
+** across threads on first use is fine - every thread computes the same
+** bytes, no lock needed.
+*/
 static void 
 smtp_addr_build_char_class_table(void)
 {

@@ -48,36 +48,40 @@ typedef enum {
     SMTP_ADDR_ERR_DOMAIN_LITERAL_UNTERMINATED,
     SMTP_ADDR_ERR_DOMAIN_LITERAL_INVALID,
     SMTP_ADDR_ERR_TOTAL_TOO_LONG,
-    SMTP_ADDR_ERR_COUNT /* sentinel - also bounds the string table */
+    SMTP_ADDR_ERR_COUNT /* counter */
 } smtp_addr_err;
 
 
 /*
- * Validates addr (need not be NUL-terminated; len is authoritative).
- * Returns 0 (SMTP_ADDR_OK) on success, non-zero smtp_addr_err on failure.
- *
- * On failure, error detail is stashed thread-locally and can be read
- * with smtp_validate_get_last_error() / _offset() / _detailed(), same
- * semantics as Win32 GetLastError(): valid only until the next call to
- * smtp_validate_address() on this thread.
- */
+** Validates addr (must not be NUL-terminated, len is authoritative).
+** Returns 0 (SMTP_ADDR_OK) on success, non-zero smtp_addr_err on failure.
+**
+** On failure, error detail is stashed thread locally and can be read
+** with smtp_validate_get_last_error() / _offset() / _detailed(), same
+** semantics as Win32 GetLastError(): valid only until the next call to
+** smtp_validate_address() on this thread.
+*/
 int 
 smtp_address_validate(
   const char*   addr, 
         size_t  len
 );
  
-/* Static, allocation-free string for the last error on this thread. */
+/* 
+** Static, allocation-free string for the last error on this thread. 
+*/
 const char*
 smtp_address_validate_get_last_error(void);
  
-/* Byte offset into the input where validation failed. */
+/* 
+** Byte offset into the input where validation failed. 
+*/
 size_t smtp_address_validate_get_last_error_offset(void);
  
 /*
- * Formats "<message> at offset <N>" into caller-owned buf.
- * Returns buf. Truncates safely if buflen is too small.
- */
+** Formats "<message> at offset <N>" into caller-owned buf.
+** Returns buf. Truncates safely if buflen is too small.
+*/
 const char*
 smtp_address_validate_get_last_error_detailed(
   char*   buf, 
