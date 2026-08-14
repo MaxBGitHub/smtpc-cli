@@ -105,13 +105,13 @@ smtp_log_get_utc_timestamp(
   ** under concurrent bulk-mode logging. */  
   gmtime_r(&tp.tv_sec, &tm_utc); 
 
-  ts->year = tm_utc.tm_year + 1900;
-  ts->month = tm_utc.tm_mon + 1;
-  ts->day = tm_utc.tm_mday;
-  ts->hour = tm_utc.tm_hour;
-  ts->minute = tm_utc.tm_min;
-  ts->second = tm_utc.tm_sec;
-  ts->ms = (int)(tp.tv_nsec / 1000000);
+  ts->year    = tm_utc.tm_year + 1900;
+  ts->month   = tm_utc.tm_mon + 1;
+  ts->day     = tm_utc.tm_mday;
+  ts->hour    = tm_utc.tm_hour;
+  ts->minute  = tm_utc.tm_min;
+  ts->second  = tm_utc.tm_sec;
+  ts->ms      = (int)(tp.tv_nsec / 1000000);
 #endif
 }
 
@@ -119,24 +119,25 @@ smtp_log_get_utc_timestamp(
 ** Event vocabulary = fixed uppercase token, same order as smtp_log_event.
 */
 static const char *const g_smtp_log_event_names[SMTP_LOG_EVENT_COUNT] = {
-    [SMTP_LOG_CONNECTING]   = "CONNECTING",
-    [SMTP_LOG_CONNECTED]    = "CONNECTED",
-    [SMTP_LOG_EHLO]         = "EHLO",
-    [SMTP_LOG_REPLY]        = "REPLY",
-    [SMTP_LOG_CAPABILITIES] = "CAPABILITIES",
-    [SMTP_LOG_STARTTLS]     = "STARTTLS",
-    [SMTP_LOG_TLS_BEGIN]    = "TLS_BEGIN",
-    [SMTP_LOG_TLS_OK]       = "TLS_OK",
-    [SMTP_LOG_TLS_FAIL]     = "TLS_FAIL",
-    [SMTP_LOG_MAIL_FROM]    = "MAIL_FROM",
-    [SMTP_LOG_RCPT_TO]      = "RCPT_TO",
-    [SMTP_LOG_DATA_BEGIN]   = "DATA_BEGIN",
-    [SMTP_LOG_DATA_END]     = "DATA_END",
-    [SMTP_LOG_RSET]         = "RSET",
-    [SMTP_LOG_QUIT]         = "QUIT",
-    [SMTP_LOG_DISCONNECT]   = "DISCONNECT",
-    [SMTP_LOG_ERROR]        = "ERROR",
-    [SMTP_LOG_TIMEOUT]      = "TIMEOUT",
+    [SMTP_LOG_CONNECTING]       = "CONNECTING",
+    [SMTP_LOG_CONNECTED]        = "CONNECTED",
+    [SMTP_LOG_EHLO]             = "EHLO",
+    [SMTP_LOG_REPLY]            = "REPLY",
+    [SMTP_LOG_CAPABILITIES]     = "CAPABILITIES",
+    [SMTP_LOG_STARTTLS]         = "STARTTLS",
+    [SMTP_LOG_TLS_BEGIN]        = "TLS_BEGIN",
+    [SMTP_LOG_TLS_OK]           = "TLS_OK",
+    [SMTP_LOG_TLS_FAIL]         = "TLS_FAIL",
+    [SMTP_LOG_TLS_CERT_WARNING] = "TLS_CERT_WARNING",
+    [SMTP_LOG_MAIL_FROM]        = "MAIL_FROM",
+    [SMTP_LOG_RCPT_TO]          = "RCPT_TO",
+    [SMTP_LOG_DATA_BEGIN]       = "DATA_BEGIN",
+    [SMTP_LOG_DATA_END]         = "DATA_END",
+    [SMTP_LOG_RSET]             = "RSET",
+    [SMTP_LOG_QUIT]             = "QUIT",
+    [SMTP_LOG_DISCONNECT]       = "DISCONNECT",
+    [SMTP_LOG_ERROR]            = "ERROR",
+    [SMTP_LOG_TIMEOUT]          = "TIMEOUT",
 };
 
 
@@ -284,7 +285,7 @@ smtp_log_emit(
 
   char line[2048];
   int n = snprintf(line, sizeof(line),
-      "[%04d-%02d-%02d] [%02d:%02d:%02d.%03d] [%s] [%s] %s %s\n",
+      "[%04d-%02d-%02d] [%02d:%02d:%02d.%03d] [%s] [%s] [%s] '%s'\n",
       ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second, ts.ms,
       id_buf, actor, g_smtp_log_event_names[type], detail);
 

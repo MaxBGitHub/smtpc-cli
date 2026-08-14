@@ -43,6 +43,10 @@ typedef enum {
   SMTP_LOG_TLS_BEGIN,
   SMTP_LOG_TLS_OK,
   SMTP_LOG_TLS_FAIL,
+  SMTP_LOG_TLS_CERT_WARNING, /* Handshake succeeded in trust mode despite
+                                a certificate that would have failed strict
+                                validation - detail is the reason it would
+                                have failed */
   SMTP_LOG_MAIL_FROM,
   SMTP_LOG_RCPT_TO,
   SMTP_LOG_DATA_BEGIN,

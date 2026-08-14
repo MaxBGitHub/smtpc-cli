@@ -7,6 +7,7 @@
 #include "smtp_reactor.h"
 #include "smtp_capabilities.h"
 #include "smtp_log.h"
+#include "smtp_tls.h"
 
 /* 
 ** Per connection state machine covering connect, banner, EHLO.
@@ -52,6 +53,9 @@ typedef enum {
   SMTP_CONN_STATE_WAIT_BANNER,
   SMTP_CONN_STATE_SENDING_EHLO,
   SMTP_CONN_STATE_WAIT_EHLO,
+  SMTP_CONN_STATE_SENDING_STARTTLS,
+  SMTP_CONN_STATE_WAIT_STARTTLS_REPLY,
+  SMTP_CONN_STATE_TLS_HANDSHAKING, /* Shared by implicit/explicit TLS */
   SMTP_CONN_STATE_READY, /* EHLO complete and capabilities populated */
   SMTP_CONN_STATE_ERROR,
   SMTP_CONN_STATE_TIMED_OUT
@@ -67,20 +71,47 @@ typedef struct {
   size_t  read_len;
 
   char    write_buf[SMTP_CONN_WRITE_BUF_SIZE];
-  size_t  write_len;
+  size_t  write_len; /* Plaintext command length */
+  size_t  wire_write_len; /* Bytes actually handed to the reactor for
+                             in-flight write. Equals write_len when TLS is
+                             inactive, but is the ciphertext length once
+                             it's active, so write completion checks must
+                             compare against this, never write_len directly,
+                             when TLS might be in play */
 
   uint64_t connect_timeout_ms;  /* Tool configured not an RFC value             */
   uint64_t deadline_ms;         /* Absolute monotonic deadline for current step */
 
   smtp_capabilities* caps;  /* Thread owned scratch buffer. Not allocated or
-                            ** owned here, see smtp_capabilities.h design notes
-                            ** on per-thread reuse rather than
-                            ** per-connection embedding */
+                               owned here, see smtp_capabilities.h design notes
+                               on per-thread reuse rather than
+                               per-connection embedding */
 
   smtp_log_id log_id;
   char        actor[SMTP_CONN_MAX_ACTOR_SIZE]; /* Remote host/ip for logging */
 
   int greeting_code; /* The 220, or error code, kept for diagnostics. */
+
+  smtp_tls_mode tls_mode;
+  smtp_tls_ctx* tls_ctx;  /* Thread owned, not allocated or owned here.
+                             same reuse convention as caps. NULL is only
+                             valid when tls_mode is SMTP_TLS_MODE_NONE */
+  smtp_tls*     tls;      /* NULL until a hanshake begins. Non-NULL means every
+                             subsequent read/write on this connection must route
+                             through it, never the reactor directly. Owned by 
+                             this connection once created. 
+                             See smtp_connection_close(). */
+  int tls_trust_without_validation;
+  int banner_seen; /* Distinguishes which side of TLS_HANDSHAKING a 
+                      completion in on. See the module doc comment */
+
+  unsigned char cipher_buf[SMTP_CONN_READ_BUF_SIZE]; /* Raw ciphertext buf,
+                            used for directions: the target of raw reactor
+                            reads pending decrypt and the target
+                            smtp_tls_encrypt()/smtp_tls_handshake()
+                            write into before a reactor write is submitted.
+                            Never holds plaintext. */
+  
 } smtp_connection;
 
 
@@ -95,7 +126,16 @@ smtp_connection_init(
         smtp_connection*    conn,
         smtp_capabilities*  caps,
         smtp_log_id         log_id,
-  const char*               actor
+  const char*               actor,
+        smtp_tls_mode       tls_mode,
+        smtp_tls_ctx*       tls_ctx,
+        int                 tls_trust_without_validation
+);
+
+
+void
+smtp_connection_close(
+  smtp_connection* conn
 );
 
 

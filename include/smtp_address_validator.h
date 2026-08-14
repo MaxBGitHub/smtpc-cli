@@ -53,7 +53,7 @@ typedef enum {
 
 
 /*
-** Validates addr (must not be NUL-terminated, len is authoritative).
+** Validates addr (need not be NUL-terminated, len is authoritative).
 ** Returns 0 (SMTP_ADDR_OK) on success, non-zero smtp_addr_err on failure.
 **
 ** On failure, error detail is stashed thread locally and can be read

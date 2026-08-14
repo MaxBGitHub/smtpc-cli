@@ -419,7 +419,7 @@ smtp_hdr_validate_get_last_error_offset(void)
 
 
 const char*
-smtp_hdr_validate_gate_last_error_detailed(
+smtp_hdr_validate_get_last_error_detailed(
   char*   buf,
   size_t  len)
 {
