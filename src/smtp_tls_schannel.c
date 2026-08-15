@@ -139,7 +139,7 @@ struct smtp_tls {
 
   SecPkgContext_StreamSizes stream_sizes;
   int                       stream_sizes_valid;
-}
+};
 
 
 static void
@@ -546,7 +546,7 @@ smtp_tls_encrypt(
         size_t    plaintext_len,
         void*     out_buf,
         size_t    out_buf_size,
-        size_t    out_len)
+        size_t*   out_len)
 {
   SMTP_TLS_ASSERT(tls != NULL);
   SMTP_TLS_ASSERT(tls->handshake_done);
@@ -561,7 +561,7 @@ smtp_tls_encrypt(
       SECPKG_ATTR_STREAM_SIZES, 
       &tls->stream_sizes);    
     if (qs != SEC_E_OK) {
-      smtp_tls_fail(SMTP_TLS_ERROR_PROTOCOL_ERROR);
+      smtp_tls_fail(SMTP_TLS_ERR_PROTOCOL_ERROR);
       return SMTP_TLS_ERROR;
     }
     tls->stream_sizes_valid = 1;

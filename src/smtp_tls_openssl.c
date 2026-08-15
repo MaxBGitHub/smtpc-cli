@@ -332,7 +332,7 @@ smtp_tls_feed_input(
   int n = BIO_write(tls->network_bio, data, (int)len);
   return (n >= 0 && (size_t)n == len) 
     ? 0 
-    : 1;
+    : -1;
 }
 
 

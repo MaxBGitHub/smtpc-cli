@@ -119,6 +119,7 @@ smtp_log_get_utc_timestamp(
 ** Event vocabulary = fixed uppercase token, same order as smtp_log_event.
 */
 static const char *const g_smtp_log_event_names[SMTP_LOG_EVENT_COUNT] = {
+    [SMTP_LOG_RESOLVED]         = "RESOLVED",
     [SMTP_LOG_CONNECTING]       = "CONNECTING",
     [SMTP_LOG_CONNECTED]        = "CONNECTED",
     [SMTP_LOG_EHLO]             = "EHLO",

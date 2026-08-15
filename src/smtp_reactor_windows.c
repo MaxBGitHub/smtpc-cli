@@ -382,7 +382,7 @@ smtp_reactor_forget(
   smtp_socket   sock)
 {
   SMTP_REACTOR_ASSERT(r != NULL);
-  SMTP_REACTOR_ASSERT(r->live_count > 0) /* Double forget edge case */
+  SMTP_REACTOR_ASSERT(r->live_count > 0); /* Double forget edge case */
 
   /* Nothing to release at the OS level.
   ** IOCPs association is tied to the handle itself and is released

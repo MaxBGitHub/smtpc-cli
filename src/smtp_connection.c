@@ -851,6 +851,7 @@ smtp_connection_start(
   SMTP_CONN_ASSERT(conn != NULL);
   SMTP_CONN_ASSERT(r != NULL);
   SMTP_CONN_ASSERT(addr != NULL);
+  SMTP_CONN_ASSERT(conn->tls == NULL);
 
   conn->sock                = sock;
   conn->state               = SMTP_CONN_STATE_CONNECTING;
@@ -858,6 +859,7 @@ smtp_connection_start(
   conn->deadline_ms         = now_ms + connect_timeout_ms;
   conn->read_len            = 0;
   conn->write_len           = 0;
+  conn->banner_seen         = 0;
 
   smtp_log_emit(SMTP_LOG_CONNECTING, &conn->log_id, conn->actor, "connecting");
 

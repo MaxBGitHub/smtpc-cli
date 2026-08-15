@@ -10,8 +10,23 @@
 #include "smtp_tls.h"
 
 /* 
-** Per connection state machine covering connect, banner, EHLO.
-** Driven by explicit calls from an orchestration loop.
+** Per connection state machine covering connect, banner, EHLO, and the 
+** TLS upgrade (implicit, or explicit via STARTTLS command) in all 4
+** configured modes: none, opportunistic, explicit, implicit.
+** See smtp_tls.h's smtp_tls_mode for what each one means.
+**
+** TLS_HANDSHAKING is one shared state entered from two different places.
+** Implicit mode enters it immediately after CONNECTING, before any SMTP text
+** at all. Explicit/opportunistic mode enters it after WAIT_EHLO decides to
+** upgrade, once STARTTLS command has been sent and accepted. What happens
+** when it completes depends on which path led there, tracked via banner_seen
+** rather than a second state: if no banner has been read yet (implicit),
+** proceed to WAIT_BANNER; if one already has (explicit/opportunistic), the
+** capabilities from before TLS are discarded and a second EHLO is sent -
+** RFC 3207 Sec 4.2: capabilities negotiated before STARTTLS must never be
+** merged with what comes after, since a MITM could have forged them.
+**
+** Driven by explicit calls from orchestration loop.
 **
 ** Timeout follow RFC 5321 Sec 4.5.3.2 minimum client values:
 **    - initial 220 greeting: 5 minutes
@@ -21,6 +36,9 @@
 **      default, not a directly cited RFC number.
 ** Connect itself is a transport layer concern the RFC doesn't cover. 
 ** Its timeout is tool configured (caller supplied), not a RFC minimum.
+** The TLS handshake likewise has no RFC-cited minimum of its own -
+** defaulted to the same 5-minute class as EHLO/greeting, for the same 
+** reason: it's part of the same pre-transaction phase.
 **
 ** Deliberately deferred for this pass: falling back to HELO when a server
 ** rejects EHLO (RFC 5321 Sec 4.1.4) - rare among real servers, but a known 
@@ -44,8 +62,12 @@
 ** Generous for any real EHLO response */
 #define SMTP_CONN_MAX_REPLY_LINES   64
 
-/* Max length of host/ip for logging.*/
-#define SMTP_CONN_MAX_ACTOR_SIZE    64
+/* Max length of the actor string for logging: "ip:port - hostname:port"
+** (or "ip:port - n/a" when no hostname is known). Sized to fit a full-length
+** legal DNS hostname (up to 253 octets, RFC 1035) plus both ports and the 
+** seperator, not just a bare IP. The same domain plus margin reasoning
+** already used for SMTP_CONN_WRITE_BUF_SIZE above, not an arbitrary number. */
+#define SMTP_CONN_MAX_ACTOR_SIZE    320
 
 
 typedef enum {
@@ -133,6 +155,14 @@ smtp_connection_init(
 );
 
 
+/*
+** Releases any TLS engine associated with conn. Callers must call this before
+** reusing conn for a new connection attempt (via smtp_connection_init again)
+** or discarding it, whenever conn may have reached a point where TLS became
+** active (READY, or ERROR/TIMED_OUT after STARTTLS was sent or an implicit
+** handshake began), otherwise a TLS engine created partway through is leaked.
+** Safe to call even if no TLS engine was ever created for conn.
+*/
 void
 smtp_connection_close(
   smtp_connection* conn
