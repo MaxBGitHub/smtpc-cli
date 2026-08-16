@@ -5,6 +5,20 @@
 #include <stdint.h>
 
 #if defined(_WIN32)
+  /* GetQueuedCompletionStatusEx() (used in smtp_reactor_windows.c) is gated
+  ** behind _WIN32_WINNT >= 0x0600 inside Windows SDK. Without this, the 
+  ** compiler falls back to an implicit declaration. 
+  ** 0x0600 = Windows Vista/Server 2008, the oldest version anything in this
+  ** project needs. If a build targets 0x0600 or higher, this leaves it
+  ** completely untouched rather than silently forcing it down to 0x0600. */  
+  #if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0600)
+    #undef _WIN32_WINNT
+    #define _WIN32_WINNT 0x0600
+  #endif
+  #if !defined(WINVER) || (WINVER < 0x0600)
+    #undef WINVER
+    #define WINVER 0x0600
+  #endif
   #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
   #endif

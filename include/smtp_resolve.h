@@ -5,6 +5,15 @@
 #include <stdint.h>
 
 #if defined(_WIN32)
+  /* See smtp_reactor.h for the full explanation */
+  #if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0600)
+    #undef _WIN32_WINNT
+    #define _WIN32_WINNT 0x0600
+  #endif
+  #if !defined(WINVER) || (WINVER < 0x0600)
+    #undef WINVER
+    #define WINVER 0x0600
+  #endif
   #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
   #endif
